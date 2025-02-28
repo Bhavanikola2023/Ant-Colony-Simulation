@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ant Colony Foraging Simulation</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family: Arial, sans-serif;
+      background-color: #f0f0f0;
+    }
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+    .header {
+      margin-bottom: 10px;
+    }
+    .control-panel {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      margin-bottom: 20px;
+      padding: 15px;
+      background-color: #e0e0e0;
+      border-radius: 5px;
+    }
+    .control-group {
+      display: flex;
+      flex-direction: column;
+    }
+    .control-label {
+      margin-bottom: 5px;
+      font-weight: bold;
+      font-size: 14px;
+    }
+    .button-group {
+      display: flex;
+      gap: 10px;
+      align-items: flex-end;
+    }
+    button {
+      padding: 8px 15px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    .stats {
+      margin-top: 10px;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Ant Colony Foraging Simulation</h1>
+      <p>A model demonstrating how ants use pheromone trails to optimize foraging paths.</p>
+    </div>
+    
+    <div class="control-panel">
+      <div class="control-group">
+        <label class="control-label" for="antCount">Ant Count:</label>
+        <input type="range" id="antCount" min="10" max="200" value="100" step="10">
+        <span id="antCountValue">100</span>
+      </div>
+      
+      <div class="control-group">
+        <label class="control-label" for="antSpeed">Ant Speed:</label>
+        <input type="range" id="antSpeed" min="1" max="5" value="2" step="0.1">
+        <span id="antSpeedValue">2</span>
+      </div>
+      
+      <div class="control-group">
+        <label class="control-label" for="pheromoneStrength">Pheromone Strength:</label>
+        <input type="range" id="pheromoneStrength" min="50" max="500" value="200" step="10">
+        <span id="pheromoneStrengthValue">200</span>
+      </div>
+      
+      <div class="control-group">
+        <label class="control-label" for="pheromoneDecay">Pheromone Decay (%):</label>
+        <input type="range" id="pheromoneDecay" min="1" max="10" value="5" step="0.1">
+        <span id="pheromoneDecayValue">5</span>
+      </div>
+      
+      <div class="control-group">
+        <label class="control-label" for="sensorAngle">Sensor Angle (°):</label>
+        <input type="range" id="sensorAngle" min="10" max="90" value="45" step="5">
+        <span id="sensorAngleValue">45</span>
+      </div>
+      
+      <div class="control-group">
+        <label class="control-label" for="sensorDistance">Sensor Distance:</label>
+        <input type="range" id="sensorDistance" min="5" max="30" value="15" step="1">
+        <span id="sensorDistanceValue">15</span>
+      </div>
+      
+      <div class="control-group">
+        <label class="control-label" for="randomFactor">Random Factor:</label>
+        <input type="range" id="randomFactor" min="0" max="50" value="20" step="5">
+        <span id="randomFactorValue">20</span>
+      </div>
+      
+      <div class="button-group">
+        <button id="resetBtn">Reset Simulation</button>
+        <button id="addFoodBtn">Add Food Source</button>
+        <button id="clearFoodBtn">Clear Food Sources</button>
+      </div>
+    </div>
+    
+    <div id="simulation-canvas"></div>
+    
+    <div class="stats">
+      <p>Simulation Statistics:</p>
+      <div id="statsDisplay">
+        <span>Food Collected: 0</span>
+        <span>Active Ants: 0</span>
+        <span>Average Path Length: 0</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Main p5.js sketch
+    let sketch = function(p) {
+      // Simulation parameters
+      let width = 800;
+      let height = 500;
+      let ants = [];
+      let pheromoneMap = [];
+      let foodSources = [];
+      let colony = { x: 0, y: 0, radius: 20 };
+      let foodCollected = 0;
+      let pathLengths = [];
+      let maxPathLength = 100;
+      
+      // Parameters controlled by UI
+      let antCount = 100;
+      let antSpeed = 2;
+      let pheromoneStrength = 200;
+      let pheromoneDecay = 0.05;
+      let sensorAngle = 45;
+      let sensorDistance = 15;
+      let randomFactor = 20;
+      
+      // Initialize canvas and simulation
+      p.setup = function() {
+        let canvas = p.createCanvas(width, height);
+        canvas.parent('simulation-canvas');
+        
+        // Initialize colony at the center of the canvas
+        colony.x = width / 4;
+        colony.y = height / 2;
+        
+        // Initialize pheromone map
+        for (let x = 0; x < width; x++) {
+          pheromoneMap[x] = [];
+          for (let y = 0; y < height; y++) {
+            pheromoneMap[x][y] = 0;
+          }
+        }
+        
+        // Add a default food source
+        addFoodSource(width * 0.75, height / 2, 15, 500);
+        
+        // Initialize ants
+        initializeAnts();
+        
+        // Setup UI controls
+        setupControls();
+      };
+      
+      // Main draw loop
+      p.draw = function() {
+        p.background(240);
+        
+        // Draw and update pheromone map
+        drawPheromones();
+        
+        // Draw colony
+        p.fill(70, 50, 0);
+        p.ellipse(colony.x, colony.y, colony.radius * 2);
+        
+        // Draw food sources
+        drawFoodSources();
+        
+        // Update and draw ants
+        updateAnts();
+        
+        // Update statistics
+        updateStats();
+      };
+      
+      // Initialize ants
+      function initializeAnts() {
+        ants = [];
+        for (let i = 0; i < antCount; i++) {
+          ants.push(createAnt());
+        }
+      }
+      
+      // Create a new ant
+      function createAnt() {
+        let angle = p.random(p.TWO_PI);
+        return {
+          x: colony.x,
+          y: colony.y,
+          angle: angle,
+          speed: antSpeed,
+          hasFood: false,
+          trail: [],
+          trailIndex: 0,
+          searchMode: true,
+          returningMode: false,
+          pathLength: 0
+        };
+      }
+      
+      // Add a food source
+      function addFoodSource(x, y, radius, amount) {
+        foodSources.push({
+          x: x,
+          y: y,
+          radius: radius,
+          amount: amount,
+          initialAmount: amount
+        });
+      }
+      
+      // Draw food sources
+      function drawFoodSources() {
+        for (let i = 0; i < foodSources.length; i++) {
+          let food = foodSources[i];
+          // Size based on remaining amount
+          let size = food.radius * (0.5 + 0.5 * (food.amount / food.initialAmount));
+          
+          p.fill(30, 180, 30);
+          p.noStroke();
+          p.ellipse(food.x, food.y, size * 2);
+        }
+      }
+      
+      // Draw pheromones
+      function drawPheromones() {
+        p.loadPixels();
+        
+        for (let x = 0; x < width; x++) {
+          for (let y = 0; y < height; y++) {
+            if (pheromoneMap[x] && pheromoneMap[x][y] > 0) {
+              // Decay pheromones
+              pheromoneMap[x][y] *= (1 - pheromoneDecay);
+              
+              // Draw pheromones
+              let value = p.constrain(pheromoneMap[x][y], 0, 255);
+              let idx = (y * width + x) * 4;
+              
+              if (value > 5) { // Only draw if above threshold
+                p.pixels[idx] = p.pixels[idx] + value/8; // R
+                p.pixels[idx + 1] = p.pixels[idx + 1] + value/3; // G 
+                p.pixels[idx + 2] = p.pixels[idx + 2] + value; // B
+              }
+            }
+          }
+        }
+        
+        p.updatePixels();
+      }
+      
+      // Update all ants
+      function updateAnts() {
+        let activeAnts = 0;
+        
+        for (let i = 0; i < ants.length; i++) {
+          let ant = ants[i];
+          
+          // Check if ant is active
+          if (p.dist(ant.x, ant.y, colony.x, colony.y) > 2) {
+            activeAnts++;
+          }
+          
+          // Check for food collision
+          if (!ant.hasFood) {
+            for (let j = 0; j < foodSources.length; j++) {
+              let food = foodSources[j];
+              if (food.amount > 0 && p.dist(ant.x, ant.y, food.x, food.y) < food.radius) {
+                ant.hasFood = true;
+                ant.angle += p.PI; // Turn around
+                ant.searchMode = false;
+                ant.returningMode = true;
+                food.amount--;
+                
+                // Record the path to follow back to colony
+                if (ant.trail.length > 0) {
+                  // Store the current path length for statistics
+                  pathLengths.push(ant.trail.length);
+                  if (pathLengths.length > maxPathLength) {
+                    pathLengths.shift();
+                  }
+                }
+                break;
+              }
+            }
+          }
+          
+          // Check for colony collision when returning with food
+          if (ant.hasFood && p.dist(ant.x, ant.y, colony.x, colony.y) < colony.radius) {
+            ant.hasFood = false;
+            ant.searchMode = true;
+            ant.returningMode = false;
+            ant.trail = [];
+            ant.trailIndex = 0;
+            foodCollected++;
+            ant.pathLength = 0;
+          }
+          
+          // Update ant position and behavior
+          moveAnt(ant);
+          
+          // Draw the ant
+          drawAnt(ant);
+        }
+      }
+      
+      // Move an individual ant
+      function moveAnt(ant) {
+        // If returning to colony with food, follow trail back
+        if (ant.returningMode && ant.trail.length > 0) {
+          // Follow trail back to colony
+          if (ant.trailIndex < ant.trail.length) {
+            let targetPoint = ant.trail[ant.trail.length - 1 - ant.trailIndex];
+            let targetAngle = p.atan2(targetPoint.y - ant.y, targetPoint.x - ant.x);
+            
+            // Adjust angle towards target
+            let angleDiff = p.angleBetween(ant.angle, targetAngle);
+            ant.angle += p.constrain(angleDiff, -0.3, 0.3);
+            
+            // If close to target point, move to next point in trail
+            if (p.dist(ant.x, ant.y, targetPoint.x, targetPoint.y) < 5) {
+              ant.trailIndex++;
+            }
+          } else {
+            // If reached end of trail or no trail, head directly to colony
+            let targetAngle = p.atan2(colony.y - ant.y, colony.x - ant.x);
+            let angleDiff = p.angleBetween(ant.angle, targetAngle);
+            ant.angle += p.constrain(angleDiff, -0.2, 0.2);
+          }
+          
+          // Leave pheromone trail when returning with food
+          let pheromoneValue = pheromoneStrength;
+          let ix = Math.floor(ant.x);
+          let iy = Math.floor(ant.y);
+          
+          if (ix >= 0 && ix < width && iy >= 0 && iy < height) {
+            if (!pheromoneMap[ix]) pheromoneMap[ix] = [];
+            pheromoneMap[ix][iy] = pheromoneValue;
+          }
+        } 
+        // If searching for food, use pheromones and sensors to guide movement
+        else if (ant.searchMode) {
+          // Create three sensors: left, center, right
+          let leftAngle = ant.angle - p.radians(sensorAngle);
+          let rightAngle = ant.angle + p.radians(sensorAngle);
+          
+          let leftSensorX = ant.x + p.cos(leftAngle) * sensorDistance;
+          let leftSensorY = ant.y + p.sin(leftAngle) * sensorDistance;
+          
+          let centerSensorX = ant.x + p.cos(ant.angle) * sensorDistance;
+          let centerSensorY = ant.y + p.sin(ant.angle) * sensorDistance;
+          
+          let rightSensorX = ant.x + p.cos(rightAngle) * sensorDistance;
+          let rightSensorY = ant.y + p.sin(rightAngle) * sensorDistance;
+          
+          // Sample pheromone at each sensor
+          let leftPheromone = samplePheromone(leftSensorX, leftSensorY);
+          let centerPheromone = samplePheromone(centerSensorX, centerSensorY);
+          let rightPheromone = samplePheromone(rightSensorX, rightSensorY);
+          
+          // Add random factor to promote exploration
+          leftPheromone += p.random(randomFactor);
+          centerPheromone += p.random(randomFactor);
+          rightPheromone += p.random(randomFactor);
+          
+          // Steer based on pheromone levels
+          if (centerPheromone > leftPheromone && centerPheromone > rightPheromone) {
+            // Continue straight
+          } else if (leftPheromone > rightPheromone) {
+            // Turn left
+            ant.angle -= p.radians(5);
+          } else if (rightPheromone > leftPheromone) {
+            // Turn right
+            ant.angle += p.radians(5);
+          } else {
+            // Random movement if no pheromone detected
+            ant.angle += p.random(-0.2, 0.2);
+          }
+          
+          // Record trail for returning
+          if (ant.trail.length < 1000) { // Limit trail length to prevent memory issues
+            if (ant.trail.length === 0 || 
+                p.dist(ant.x, ant.y, ant.trail[ant.trail.length-1].x, ant.trail[ant.trail.length-1].y) > 10) {
+              ant.trail.push({x: ant.x, y: ant.y});
+              ant.pathLength++;
+            }
+          }
+        }
+        
+        // Move ant forward
+        ant.x += p.cos(ant.angle) * ant.speed;
+        ant.y += p.sin(ant.angle) * ant.speed;
+        
+        // Boundary handling - wrap around edges
+        if (ant.x < 0) ant.x = width;
+        if (ant.x > width) ant.x = 0;
+        if (ant.y < 0) ant.y = height;
+        if (ant.y > height) ant.y = 0;
+      }
+      
+      // Sample pheromone level at given coordinates
+      function samplePheromone(x, y) {
+        let ix = Math.floor(x);
+        let iy = Math.floor(y);
+        
+        if (ix >= 0 && ix < width && iy >= 0 && iy < height) {
+          if (!pheromoneMap[ix]) return 0;
+          return pheromoneMap[ix][iy] || 0;
+        }
+        return 0;
+      }
+      
+      // Draw an individual ant
+      function drawAnt(ant) {
+        p.push();
+        p.translate(ant.x, ant.y);
+        p.rotate(ant.angle);
+        
+        if (ant.hasFood) {
+          p.fill(200, 0, 0); // Red for ants with food
+        } else {
+          p.fill(0, 0, 0); // Black for searching ants
+        }
+        
+        // Draw ant body
+        p.ellipse(0, 0, 6, 4);
+        
+        // Draw ant head
+        p.ellipse(3, 0, 3, 3);
+        
+        p.pop();
+      }
+      
+      // Update statistics display
+      function updateStats() {
+        let avgPathLength = 0;
+        if (pathLengths.length > 0) {
+          avgPathLength = pathLengths.reduce((a, b) => a + b, 0) / pathLengths.length;
+        }
+        
+        let activeAnts = 0;
+        for (let i = 0; i < ants.length; i++) {
+          if (p.dist(ants[i].x, ants[i].y, colony.x, colony.y) > colony.radius) {
+            activeAnts++;
+          }
+        }
+        
+        let statsText = 
+          `Food Collected: ${foodCollected} | ` +
+          `Active Ants: ${activeAnts} | ` +
+          `Average Path Length: ${avgPathLength.toFixed(1)}`;
+          
+        document.getElementById('statsDisplay').innerHTML = statsText;
+      }
+      
+      // Setup UI controls
+      function setupControls() {
+        // Ant Count slider
+        let antCountSlider = document.getElementById('antCount');
+        let antCountValue = document.getElementById('antCountValue');
+        
+        antCountSlider.addEventListener('input', function() {
+          antCount = parseInt(this.value);
+          antCountValue.textContent = antCount;
+          initializeAnts();
+        });
+        
+        // Ant Speed slider
+        let antSpeedSlider = document.getElementById('antSpeed');
+        let antSpeedValue = document.getElementById('antSpeedValue');
+        
+        antSpeedSlider.addEventListener('input', function() {
+          antSpeed = parseFloat(this.value);
+          antSpeedValue.textContent = antSpeed;
+          
+          for (let i = 0; i < ants.length; i++) {
+            ants[i].speed = antSpeed;
+          }
+        });
+        
+        // Pheromone Strength slider
+        let pheromoneStrengthSlider = document.getElementById('pheromoneStrength');
+        let pheromoneStrengthValue = document.getElementById('pheromoneStrengthValue');
+        
+        pheromoneStrengthSlider.addEventListener('input', function() {
+          pheromoneStrength = parseInt(this.value);
+          pheromoneStrengthValue.textContent = pheromoneStrength;
+        });
+        
+        // Pheromone Decay slider
+        let pheromoneDecaySlider = document.getElementById('pheromoneDecay');
+        let pheromoneDecayValue = document.getElementById('pheromoneDecayValue');
+        
+        pheromoneDecaySlider.addEventListener('input', function() {
+          pheromoneDecay = parseFloat(this.value) / 100;
+          pheromoneDecayValue.textContent = this.value;
+        });
+        
+        // Sensor Angle slider
+        let sensorAngleSlider = document.getElementById('sensorAngle');
+        let sensorAngleValue = document.getElementById('sensorAngleValue');
+        
+        sensorAngleSlider.addEventListener('input', function() {
+          sensorAngle = parseInt(this.value);
+          sensorAngleValue.textContent = sensorAngle;
+        });
+        
+        // Sensor Distance slider
+        let sensorDistanceSlider = document.getElementById('sensorDistance');
+        let sensorDistanceValue = document.getElementById('sensorDistanceValue');
+        
+        sensorDistanceSlider.addEventListener('input', function() {
+          sensorDistance = parseInt(this.value);
+          sensorDistanceValue.textContent = sensorDistance;
+        });
+        
+        // Random Factor slider
+        let randomFactorSlider = document.getElementById('randomFactor');
+        let randomFactorValue = document.getElementById('randomFactorValue');
+        
+        randomFactorSlider.addEventListener('input', function() {
+          randomFactor = parseInt(this.value);
+          randomFactorValue.textContent = randomFactor;
+        });
+        
+        // Reset button
+        document.getElementById('resetBtn').addEventListener('click', function() {
+          resetSimulation();
+        });
+        
+        // Add food button
+        document.getElementById('addFoodBtn').addEventListener('click', function() {
+          let x = p.random(width * 0.4, width * 0.9);
+          let y = p.random(height * 0.2, height * 0.8);
+          addFoodSource(x, y, p.random(10, 20), p.random(300, 700));
+        });
+        
+        // Clear food sources button
+        document.getElementById('clearFoodBtn').addEventListener('click', function() {
+          foodSources = [];
+          // Add a default food source
+          addFoodSource(width * 0.75, height / 2, 15, 500);
+        });
+      }
+      
+      // Reset the entire simulation
+      function resetSimulation() {
+        // Reset stats
+        foodCollected = 0;
+        pathLengths = [];
+        
+        // Clear pheromone map
+        for (let x = 0; x < width; x++) {
+          pheromoneMap[x] = [];
+          for (let y = 0; y < height; y++) {
+            pheromoneMap[x][y] = 0;
+          }
+        }
+        
+        // Reset food sources
+        foodSources = [];
+        addFoodSource(width * 0.75, height / 2, 15, 500);
+        
+        // Reinitialize ants
+        initializeAnts();
+      }
+      
+      // Helper function for angle calculations
+      p.angleBetween = function(angle1, angle2) {
+        let diff = angle2 - angle1;
+        while (diff > p.PI) diff -= p.TWO_PI;
+        while (diff < -p.PI) diff += p.TWO_PI;
+        return diff;
+      };
+      
+      // Mouse click to add food
+      p.mousePressed = function() {
+        if (p.mouseX >= 0 && p.mouseX < width && p.mouseY >= 0 && p.mouseY < height) {
+          // Add food at mouse position
+          addFoodSource(p.mouseX, p.mouseY, 15, 500);
+        }
+      };
+    };
+    
+    // Create p5 instance
+    new p5(sketch);
+  </script>
+</body>
+</html>
