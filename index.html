@@ -3,21 +3,38 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Ant Colony Foraging Simulation</title>
+  <title>Ant Colony Adventure</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
   <style>
     body {
       margin: 0;
       padding: 20px;
-      font-family: Arial, sans-serif;
-      background-color: #f0f0f0;
+      font-family: 'Comic Sans MS', 'Chalkboard SE', cursive;
+      background-color: #f0f8ff;
+      color: #333;
     }
     .container {
       max-width: 1000px;
       margin: 0 auto;
+      border: 8px solid #8a5a44;
+      border-radius: 15px;
+      padding: 20px;
+      background-color: #f9f3e5;
+      box-shadow: 0 6px 12px rgba(0,0,0,0.2);
     }
     .header {
+      margin-bottom: 15px;
+      text-align: center;
+    }
+    h1 {
+      color: #663300;
       margin-bottom: 10px;
+      font-size: 32px;
+    }
+    .subtitle {
+      font-size: 16px;
+      margin-bottom: 15px;
+      color: #774400;
     }
     .control-panel {
       display: flex;
@@ -25,105 +42,189 @@
       gap: 15px;
       margin-bottom: 20px;
       padding: 15px;
-      background-color: #e0e0e0;
-      border-radius: 5px;
+      background-color: #e8d8ba;
+      border-radius: 15px;
+      border: 4px solid #aa7755;
     }
     .control-group {
       display: flex;
       flex-direction: column;
+      background-color: #fff;
+      padding: 10px;
+      border-radius: 10px;
+      box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+      min-width: 150px;
     }
     .control-label {
       margin-bottom: 5px;
       font-weight: bold;
       font-size: 14px;
+      color: #663300;
+    }
+    .control-description {
+      font-size: 12px;
+      color: #666;
+      margin-bottom: 8px;
+      font-style: italic;
     }
     .button-group {
       display: flex;
       gap: 10px;
-      align-items: flex-end;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-top: 10px;
     }
     button {
-      padding: 8px 15px;
-      background-color: #4CAF50;
+      padding: 10px 15px;
+      background-color: #FF9900;
       color: white;
       border: none;
-      border-radius: 4px;
+      border-radius: 10px;
       cursor: pointer;
+      font-size: 14px;
+      font-weight: bold;
+      box-shadow: 0 3px 0 #CC7700;
+      transition: all 0.2s;
+      font-family: 'Comic Sans MS', 'Chalkboard SE', cursive;
     }
     button:hover {
-      background-color: #45a049;
+      background-color: #FFB340;
+      transform: translateY(-2px);
+    }
+    button:active {
+      transform: translateY(1px);
+      box-shadow: 0 1px 0 #CC7700;
     }
     .stats {
-      margin-top: 10px;
+      margin-top: 15px;
+      font-size: 16px;
+      background-color: #fff;
+      padding: 10px;
+      border-radius: 10px;
+      border: 3px solid #aa7755;
+    }
+    .pheromone-explanation {
+      background-color: #e6f7ff;
+      border: 2px dashed #66aaff;
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 10px;
+    }
+    .emoji {
+      font-size: 20px;
+      vertical-align: middle;
+      margin-right: 5px;
+    }
+    #explainer {
       font-size: 14px;
+      color: #663300;
+      margin-top: 10px;
+      padding: 10px;
+      background-color: #fffaeb;
+      border-radius: 10px;
+      border-left: 5px solid #ffc107;
+    }
+    input[type="range"] {
+      height: 25px;
+      -webkit-appearance: none;
+      width: 100%;
+      background: #f0e6d2;
+      border-radius: 10px;
+      outline: none;
+      margin: 8px 0;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 25px;
+      height: 25px;
+      background: #ff9900;
+      border-radius: 50%;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+      background: #ff7700;
+    }
+    .value-display {
+      display: inline-block;
+      width: 50px;
+      text-align: center;
+      font-weight: bold;
+      color: #663300;
+    }
+    .highlight {
+      font-weight: bold;
+      color: #ff6600;
     }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="header">
-      <h1>Ant Colony Foraging Simulation</h1>
-      <p>A model demonstrating how ants use pheromone trails to optimize foraging paths.</p>
+      <h1>🐜 Ant Colony Adventure 🐜</h1>
+      <p class="subtitle">Watch how ants use invisible trails (pheromones) to find food and bring it home!</p>
+    </div>
+    
+    <div class="pheromone-explanation">
+      <p><span class="emoji">💡</span> <span class="highlight">What are pheromones?</span> Ants leave behind invisible chemical trails called pheromones. Other ants can smell these trails and follow them to find food that was already discovered!</p>
     </div>
     
     <div class="control-panel">
       <div class="control-group">
-        <label class="control-label" for="antCount">Ant Count:</label>
+        <label class="control-label" for="antCount">Number of Ants:</label>
+        <div class="control-description">How many ants are in our colony?</div>
         <input type="range" id="antCount" min="10" max="200" value="100" step="10">
-        <span id="antCountValue">100</span>
+        <div><span id="antCountValue" class="value-display">100</span> ants</div>
       </div>
       
       <div class="control-group">
         <label class="control-label" for="antSpeed">Ant Speed:</label>
+        <div class="control-description">How fast do our ants move?</div>
         <input type="range" id="antSpeed" min="1" max="5" value="2" step="0.1">
-        <span id="antSpeedValue">2</span>
+        <div><span id="antSpeedValue" class="value-display">2</span> speed</div>
       </div>
       
-      <div class="control-group">
-        <label class="control-label" for="pheromoneStrength">Pheromone Strength:</label>
+      <div class="control-group highlight-control">
+        <label class="control-label" for="pheromoneStrength">Trail Strength:</label>
+        <div class="control-description">How strong is the invisible trail the ants leave behind?</div>
         <input type="range" id="pheromoneStrength" min="50" max="500" value="200" step="10">
-        <span id="pheromoneStrengthValue">200</span>
+        <div><span id="pheromoneStrengthValue" class="value-display">200</span> strength</div>
       </div>
       
       <div class="control-group">
-        <label class="control-label" for="pheromoneDecay">Pheromone Decay (%):</label>
+        <label class="control-label" for="pheromoneDecay">Trail Fade Speed:</label>
+        <div class="control-description">How quickly does the trail disappear?</div>
         <input type="range" id="pheromoneDecay" min="1" max="10" value="5" step="0.1">
-        <span id="pheromoneDecayValue">5</span>
+        <div><span id="pheromoneDecayValue" class="value-display">5</span> %</div>
       </div>
       
       <div class="control-group">
-        <label class="control-label" for="sensorAngle">Sensor Angle (°):</label>
-        <input type="range" id="sensorAngle" min="10" max="90" value="45" step="5">
-        <span id="sensorAngleValue">45</span>
-      </div>
-      
-      <div class="control-group">
-        <label class="control-label" for="sensorDistance">Sensor Distance:</label>
-        <input type="range" id="sensorDistance" min="5" max="30" value="15" step="1">
-        <span id="sensorDistanceValue">15</span>
-      </div>
-      
-      <div class="control-group">
-        <label class="control-label" for="randomFactor">Random Factor:</label>
+        <label class="control-label" for="randomFactor">Ant Curiosity:</label>
+        <div class="control-description">How likely are ants to explore new areas?</div>
         <input type="range" id="randomFactor" min="0" max="50" value="20" step="5">
-        <span id="randomFactorValue">20</span>
+        <div><span id="randomFactorValue" class="value-display">20</span> curiosity</div>
       </div>
       
       <div class="button-group">
-        <button id="resetBtn">Reset Simulation</button>
-        <button id="addFoodBtn">Add Food Source</button>
-        <button id="clearFoodBtn">Clear Food Sources</button>
+        <button id="resetBtn">🔄 Reset Adventure</button>
+        <button id="addFoodBtn">🍎 Add Food</button>
+        <button id="clearFoodBtn">🧹 Clear Food</button>
       </div>
     </div>
     
     <div id="simulation-canvas"></div>
     
+    <div id="explainer">
+      Watch what happens! When ants find food, they'll leave a <span style="color: blue;">blue trail</span> that gets stronger with higher "Trail Strength." This helps other ants find the food too!
+    </div>
+    
     <div class="stats">
-      <p>Simulation Statistics:</p>
+      <p>🏆 Adventure Stats:</p>
       <div id="statsDisplay">
-        <span>Food Collected: 0</span>
-        <span>Active Ants: 0</span>
-        <span>Average Path Length: 0</span>
+        <span>Food Collected: 0</span> | 
+        <span>Ants Outside: 0</span> | 
+        <span>Average Trip Length: 0</span>
       </div>
     </div>
   </div>
@@ -137,7 +238,7 @@
       let ants = [];
       let pheromoneMap = [];
       let foodSources = [];
-      let colony = { x: 0, y: 0, radius: 20 };
+      let colony = { x: 0, y: 0, radius: 30 };
       let foodCollected = 0;
       let pathLengths = [];
       let maxPathLength = 100;
@@ -151,12 +252,20 @@
       let sensorDistance = 15;
       let randomFactor = 20;
       
+      // New: Animation variables
+      let antAnimationFrame = 0;
+      let antAnimationSpeed = 0.2;
+      let foodWiggle = 0;
+
+      // New: Particle effects
+      let particles = [];
+      
       // Initialize canvas and simulation
       p.setup = function() {
         let canvas = p.createCanvas(width, height);
         canvas.parent('simulation-canvas');
         
-        // Initialize colony at the center of the canvas
+        // Initialize colony at the center-left of the canvas
         colony.x = width / 4;
         colony.y = height / 2;
         
@@ -169,7 +278,7 @@
         }
         
         // Add a default food source
-        addFoodSource(width * 0.75, height / 2, 15, 500);
+        addFoodSource(width * 0.75, height / 2, 20, 500);
         
         // Initialize ants
         initializeAnts();
@@ -180,24 +289,51 @@
       
       // Main draw loop
       p.draw = function() {
-        p.background(240);
+        p.background(240, 230, 210);
+
+        // Update animation frames
+        antAnimationFrame += antAnimationSpeed;
+        foodWiggle = p.sin(p.frameCount * 0.05) * 3;
+        
+        // Draw terrain
+        drawTerrain();
         
         // Draw and update pheromone map
         drawPheromones();
         
         // Draw colony
-        p.fill(70, 50, 0);
-        p.ellipse(colony.x, colony.y, colony.radius * 2);
+        drawColony();
         
         // Draw food sources
         drawFoodSources();
         
         // Update and draw ants
         updateAnts();
+
+        // Update particles
+        updateParticles();
         
         // Update statistics
         updateStats();
       };
+
+      // Draw terrain with details
+      function drawTerrain() {
+        // Add some grass patches
+        p.noStroke();
+        for (let i = 0; i < 20; i++) {
+          let x = i * (width / 20);
+          let y = height - p.random(10, 30);
+          p.fill(100, 180, 90, 100);
+          p.ellipse(x, y, p.random(40, 100), p.random(20, 40));
+        }
+
+        // Add some rocks
+        for (let i = 0; i < 8; i++) {
+          p.fill(150, 150, 150, 100);
+          p.ellipse(p.random(width), p.random(height), p.random(15, 30), p.random(10, 20));
+        }
+      }
       
       // Initialize ants
       function initializeAnts() {
@@ -220,7 +356,10 @@
           trailIndex: 0,
           searchMode: true,
           returningMode: false,
-          pathLength: 0
+          pathLength: 0,
+          antennaOffset: p.random(p.TWO_PI), // Random offset for animation
+          legOffset: p.random(p.TWO_PI),     // Random offset for leg animation
+          size: p.random(0.8, 1.2)           // Random size variation
         };
       }
       
@@ -231,8 +370,36 @@
           y: y,
           radius: radius,
           amount: amount,
-          initialAmount: amount
+          initialAmount: amount,
+          type: p.floor(p.random(3)) // 0: apple, 1: cookie, 2: candy
         });
+
+        // Add celebration particles
+        addParticles(x, y, 20, [255, 220, 100]);
+      }
+
+      // Draw colony
+      function drawColony() {
+        // Draw underground part
+        p.fill(139, 69, 19); // Brown
+        p.ellipse(colony.x, colony.y + 10, colony.radius * 2.5, colony.radius * 1.5);
+        
+        // Draw colony mound
+        p.fill(194, 178, 128); // Sand color
+        p.ellipse(colony.x, colony.y, colony.radius * 2, colony.radius * 1.4);
+        
+        // Draw entrance
+        p.fill(50, 25, 0);
+        p.ellipse(colony.x, colony.y - 5, colony.radius * 0.8, colony.radius * 0.6);
+        
+        // Draw colony activity - random dots moving around entrance
+        p.fill(0);
+        for (let i = 0; i < 5; i++) {
+          let angle = p.frameCount * 0.05 + i;
+          let x = colony.x + p.cos(angle) * (colony.radius * 0.3);
+          let y = colony.y - 5 + p.sin(angle) * (colony.radius * 0.2);
+          p.ellipse(x, y, 3, 3);
+        }
       }
       
       // Draw food sources
@@ -242,30 +409,69 @@
           // Size based on remaining amount
           let size = food.radius * (0.5 + 0.5 * (food.amount / food.initialAmount));
           
-          p.fill(30, 180, 30);
-          p.noStroke();
-          p.ellipse(food.x, food.y, size * 2);
+          p.push();
+          p.translate(food.x, food.y + foodWiggle); // Add wiggle for animation
+          
+          // Different food types
+          switch(food.type) {
+            case 0: // Apple
+              p.fill(220, 0, 0);
+              p.ellipse(0, 0, size * 2, size * 2);
+              p.fill(100, 160, 0);
+              p.rect(-2, -size - 5, 4, 10);
+              p.fill(30, 120, 0);
+              p.ellipse(4, -size - 2, 8, 6);
+              break;
+            case 1: // Cookie
+              p.fill(210, 180, 140);
+              p.ellipse(0, 0, size * 2, size * 2);
+              p.fill(90, 50, 20);
+              for (let j = 0; j < 5; j++) {
+                let ang = j * p.TWO_PI / 5;
+                let r = size * 0.6;
+                p.ellipse(p.cos(ang) * r, p.sin(ang) * r, size * 0.5, size * 0.5);
+              }
+              break;
+            case 2: // Candy
+              p.fill(250, 180, 220);
+              p.rect(-size, -size, size * 2, size * 2, 5);
+              for (let j = 0; j < 3; j++) {
+                p.stroke(255);
+                p.strokeWeight(2);
+                p.line(-size + j * 7, -size + 5, -size + j * 7, size - 5);
+              }
+              p.noStroke();
+              break;
+          }
+          
+          p.pop();
         }
       }
       
-      // Draw pheromones
+      // Draw pheromones - this is the key enhancement for visualizing
       function drawPheromones() {
         p.loadPixels();
         
-        for (let x = 0; x < width; x++) {
-          for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x += 2) { // Skip every other pixel for performance
+          for (let y = 0; y < height; y += 2) {
             if (pheromoneMap[x] && pheromoneMap[x][y] > 0) {
               // Decay pheromones
               pheromoneMap[x][y] *= (1 - pheromoneDecay);
               
-              // Draw pheromones
-              let value = p.constrain(pheromoneMap[x][y], 0, 255);
+              // Draw pheromones - enhanced to make more visible for kids
+              let value = p.map(pheromoneMap[x][y], 0, pheromoneStrength, 0, 255);
               let idx = (y * width + x) * 4;
               
               if (value > 5) { // Only draw if above threshold
-                p.pixels[idx] = p.pixels[idx] + value/8; // R
-                p.pixels[idx + 1] = p.pixels[idx + 1] + value/3; // G 
-                p.pixels[idx + 2] = p.pixels[idx + 2] + value; // B
+                // Make it more vibrant and "magical" looking - blue trail
+                p.pixels[idx] = p.pixels[idx]; // R
+                p.pixels[idx + 1] = p.pixels[idx + 1] + value/3; // G
+                p.pixels[idx + 2] = p.pixels[idx + 2] + value; // B - more blue to make trail visible
+                
+                // Add some sparkle effect for stronger pheromones
+                if (value > 150 && p.random(100) < 5) {
+                  addParticles(x, y, 1, [100, 200, 255]);
+                }
               }
             }
           }
@@ -282,7 +488,7 @@
           let ant = ants[i];
           
           // Check if ant is active
-          if (p.dist(ant.x, ant.y, colony.x, colony.y) > 2) {
+          if (p.dist(ant.x, ant.y, colony.x, colony.y) > colony.radius) {
             activeAnts++;
           }
           
@@ -296,6 +502,9 @@
                 ant.searchMode = false;
                 ant.returningMode = true;
                 food.amount--;
+                
+                // Add celebration particles for finding food
+                addParticles(ant.x, ant.y, 5, [255, 255, 100]);
                 
                 // Record the path to follow back to colony
                 if (ant.trail.length > 0) {
@@ -319,6 +528,9 @@
             ant.trailIndex = 0;
             foodCollected++;
             ant.pathLength = 0;
+            
+            // Add celebration particles for returning with food
+            addParticles(colony.x, colony.y, 10, [50, 255, 50]);
           }
           
           // Update ant position and behavior
@@ -353,7 +565,7 @@
             ant.angle += p.constrain(angleDiff, -0.2, 0.2);
           }
           
-          // Leave pheromone trail when returning with food
+          // Leave pheromone trail when returning with food - enhanced visual strength
           let pheromoneValue = pheromoneStrength;
           let ix = Math.floor(ant.x);
           let iy = Math.floor(ant.y);
@@ -361,6 +573,11 @@
           if (ix >= 0 && ix < width && iy >= 0 && iy < height) {
             if (!pheromoneMap[ix]) pheromoneMap[ix] = [];
             pheromoneMap[ix][iy] = pheromoneValue;
+            
+            // Occasionally add a sparkle particle for visual feedback
+            if (p.random(100) < 5) {
+              addParticles(ant.x, ant.y, 1, [100, 200, 255]);
+            }
           }
         } 
         // If searching for food, use pheromones and sensors to guide movement
@@ -435,25 +652,101 @@
         return 0;
       }
       
-      // Draw an individual ant
+      // Draw an individual ant - enhanced for kids
       function drawAnt(ant) {
         p.push();
         p.translate(ant.x, ant.y);
         p.rotate(ant.angle);
         
+        // Scale based on ant size variation
+        p.scale(ant.size);
+        
+        // Set color based on whether the ant has food
         if (ant.hasFood) {
-          p.fill(200, 0, 0); // Red for ants with food
+          p.fill(220, 50, 50); // Bright red for ants with food
         } else {
-          p.fill(0, 0, 0); // Black for searching ants
+          p.fill(30, 30, 30); // Dark for searching ants
         }
         
-        // Draw ant body
-        p.ellipse(0, 0, 6, 4);
+        // Draw ant body segments
+        p.ellipse(0, 0, 10, 6); // Abdomen (rear part)
+        p.ellipse(4, 0, 6, 5);  // Thorax (middle part)
+        p.ellipse(7, 0, 5, 4);  // Head
         
-        // Draw ant head
-        p.ellipse(3, 0, 3, 3);
+        // Draw food if ant is carrying it
+        if (ant.hasFood) {
+          p.fill(200, 180, 0);
+          p.ellipse(0, -4, 4, 4);
+        }
+        
+        // Animate antennae
+        let antennaWave = p.sin(antAnimationFrame + ant.antennaOffset) * 0.5;
+        p.stroke(30);
+        p.strokeWeight(0.8);
+        p.line(8, 0, 12, -2 + antennaWave);  // Left antenna
+        p.line(8, 0, 12, 2 - antennaWave);   // Right antenna
+        
+        // Animate legs
+        let legWave = p.sin(antAnimationFrame * 2 + ant.legOffset);
+        p.strokeWeight(1);
+        
+        // Left legs
+        p.line(0, 0, -2, -5 - legWave);
+        p.line(3, 0, 2, -5 + legWave);
+        p.line(6, 0, 7, -4 - legWave);
+        
+        // Right legs
+        p.line(0, 0, -2, 5 + legWave);
+        p.line(3, 0, 2, 5 - legWave);
+        p.line(6, 0, 7, 4 + legWave);
+        
+        p.noStroke();
+        
+        // Draw eyes
+        p.fill(0);
+        p.ellipse(8, -1, 1.5, 1.5);
+        p.ellipse(8, 1, 1.5, 1.5);
         
         p.pop();
+      }
+      
+      // Particle system for visual effects
+      function addParticles(x, y, count, color) {
+        for (let i = 0; i < count; i++) {
+          particles.push({
+            x: x,
+            y: y,
+            vx: p.random(-1, 1),
+            vy: p.random(-1, 1),
+            alpha: 255,
+            size: p.random(2, 5),
+            color: color || [255, 255, 255]
+          });
+        }
+      }
+      
+      function updateParticles() {
+        for (let i = particles.length - 1; i >= 0; i--) {
+          let particle = particles[i];
+          
+          // Update position
+          particle.x += particle.vx;
+          particle.y += particle.vy;
+          
+          // Fade out
+          particle.alpha -= 5;
+          particle.size *= 0.95;
+          
+          // Draw particle
+          p.fill(particle.color[0], particle.color[1], particle.color[2], particle.alpha);
+          p.noStroke();
+          p.ellipse(particle.x, particle.y, particle.size, particle.size);
+          
+          // Remove if faded out
+          if (particle.alpha <= 0) {
+            particles.splice(i, 1);
+          }
+        }
       }
       
       // Update statistics display
@@ -471,11 +764,21 @@
         }
         
         let statsText = 
-          `Food Collected: ${foodCollected} | ` +
-          `Active Ants: ${activeAnts} | ` +
-          `Average Path Length: ${avgPathLength.toFixed(1)}`;
+          `<span class="highlight">🍎 Food Collected: ${foodCollected}</span> | ` +
+          `<span>🐜 Ants Outside: ${activeAnts}</span> | ` +
+          `<span>🗺️ Average Trip: ${avgPathLength.toFixed(0)} steps</span>`;
           
         document.getElementById('statsDisplay').innerHTML = statsText;
+
+        // Update explainer text based on current pheromone strength
+        const explainerText = document.getElementById('explainer');
+        if (pheromoneStrength < 100) {
+          explainerText.innerHTML = "With <span class='highlight'>low Trail Strength</span>, the ants leave very faint trails. It's harder for other ants to follow them!";
+        } else if (pheromoneStrength < 300) {
+          explainerText.innerHTML = "With <span class='highlight'>medium Trail Strength</span>, ants leave a good blue trail. Watch how other ants follow these trails to find food!";
+        } else {
+          explainerText.innerHTML = "With <span class='highlight'>high Trail Strength</span>, ants leave very strong trails that glow bright blue! This helps many ants find food quickly!";
+        }
       }
       
       // Setup UI controls
@@ -496,20 +799,29 @@
         
         antSpeedSlider.addEventListener('input', function() {
           antSpeed = parseFloat(this.value);
-          antSpeedValue.textContent = antSpeed;
+          antSpeedValue.textContent = antSpeed.toFixed(1);
           
           for (let i = 0; i < ants.length; i++) {
             ants[i].speed = antSpeed;
           }
         });
         
-        // Pheromone Strength slider
+        // Pheromone Strength slider - highlighted for focus
         let pheromoneStrengthSlider = document.getElementById('pheromoneStrength');
         let pheromoneStrengthValue = document.getElementById('pheromoneStrengthValue');
         
         pheromoneStrengthSlider.addEventListener('input', function() {
           pheromoneStrength = parseInt(this.value);
           pheromoneStrengthValue.textContent = pheromoneStrength;
+          
+          // Add special effect when changing pheromone strength
+          addParticles(width/2, height/2, 20, [100, 150, 255]);
+          
+          // Highlight this control when changed
+          document.querySelector('.highlight-control').style.boxShadow = '0 0 10px #66aaff';
+          setTimeout(() => {
+            document.querySelector('.highlight-control').style.boxShadow = '';
+          }, 500);
         });
         
         // Pheromone Decay slider
@@ -519,24 +831,6 @@
         pheromoneDecaySlider.addEventListener('input', function() {
           pheromoneDecay = parseFloat(this.value) / 100;
           pheromoneDecayValue.textContent = this.value;
-        });
-        
-        // Sensor Angle slider
-        let sensorAngleSlider = document.getElementById('sensorAngle');
-        let sensorAngleValue = document.getElementById('sensorAngleValue');
-        
-        sensorAngleSlider.addEventListener('input', function() {
-          sensorAngle = parseInt(this.value);
-          sensorAngleValue.textContent = sensorAngle;
-        });
-        
-        // Sensor Distance slider
-        let sensorDistanceSlider = document.getElementById('sensorDistance');
-        let sensorDistanceValue = document.getElementById('sensorDistanceValue');
-        
-        sensorDistanceSlider.addEventListener('input', function() {
-          sensorDistance = parseInt(this.value);
-          sensorDistanceValue.textContent = sensorDistance;
         });
         
         // Random Factor slider
@@ -551,20 +845,22 @@
         // Reset button
         document.getElementById('resetBtn').addEventListener('click', function() {
           resetSimulation();
+          // Add special effect
+          addParticles(width/2, height/2, 50, [255, 255, 255]);
         });
         
         // Add food button
         document.getElementById('addFoodBtn').addEventListener('click', function() {
           let x = p.random(width * 0.4, width * 0.9);
           let y = p.random(height * 0.2, height * 0.8);
-          addFoodSource(x, y, p.random(10, 20), p.random(300, 700));
+          addFoodSource(x, y, p.random(15, 25), p.random(300, 700));
         });
         
         // Clear food sources button
         document.getElementById('clearFoodBtn').addEventListener('click', function() {
           foodSources = [];
           // Add a default food source
-          addFoodSource(width * 0.75, height / 2, 15, 500);
+          addFoodSource(width * 0.75, height / 2, 20, 500);
         });
       }
       
@@ -584,7 +880,10 @@
         
         // Reset food sources
         foodSources = [];
-        addFoodSource(width * 0.75, height / 2, 15, 500);
+        addFoodSource(width * 0.75, height / 2, 20, 500);
+        
+        // Clear particles
+        particles = [];
         
         // Reinitialize ants
         initializeAnts();
@@ -601,8 +900,14 @@
       // Mouse click to add food
       p.mousePressed = function() {
         if (p.mouseX >= 0 && p.mouseX < width && p.mouseY >= 0 && p.mouseY < height) {
-          // Add food at mouse position
-          addFoodSource(p.mouseX, p.mouseY, 15, 500);
+          // Add food at mouse position with particle effect
+          addFoodSource(p.mouseX, p.mouseY, 20, 500);
+          
+          // Add explanation for kid-friendly interaction
+          document.getElementById('explainer').innerHTML = "You added food! Watch how the ants find it and create blue trails!";
+          setTimeout(() => {
+            updateStats(); // Reset explanation after 3 seconds
+          }, 3000);
         }
       };
     };
